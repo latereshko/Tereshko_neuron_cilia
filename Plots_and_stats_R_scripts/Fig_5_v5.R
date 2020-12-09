@@ -67,7 +67,7 @@ CILIA <-read.csv(file.choose(), header=TRUE)
 
 cols1 <- c("SSTR3+" = "black", "SSTR3+GAD+" =  'black')
 
-p1<-CILIA %>% ggplot(aes(Treatment,Percent)) + bar_plain(fillcol = Treatment) + 
+p1<-CILIA %>% ggplot(aes(SSTR3,Percent)) + bar_plain(fillcol = Treatment) + 
   scale_colour_manual(values = cols1) + ylab("Percent") 
 
 p1
