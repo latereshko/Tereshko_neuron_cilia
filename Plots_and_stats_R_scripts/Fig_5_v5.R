@@ -7,13 +7,11 @@ library(ggpubr)
 ###################
 SSTR3exp <-read.csv(file.choose())   
 
-cols <- c("pos" = "chartreuse3", 
-          "neg"= "grey51")
-
 ggplot(SSTR3exp, aes(fill=SSTR3, y=Fraction, x=Layer)) + 
   geom_bar(position="stack", stat="identity",width = 0.8) +
   scale_y_continuous(expand = c(0,0))+
-  scale_fill_manual(values = cols)+
+  scale_fill_manual(values =  c("pos" = "chartreuse3", 
+                                "neg"= "grey51"))+
   theme_pubr() +
   theme(axis.title.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -28,15 +26,13 @@ ggplot(SSTR3exp, aes(fill=SSTR3, y=Fraction, x=Layer)) +
 
 IN_AVG <-read.csv(file.choose())   
 
-cols <- c("SSTR3+" = "chartreuse", 
-          "SSTR3-"= "midnightblue")
-
 IN_AVG$Subtype <- factor(IN_AVG$Subtype, levels = c("EXC", "GAD67","ChAT","PV","SOM"))
 
 ggplot(IN_AVG, aes(fill=SSTR3, y=Fraction, x=Subtype)) + 
   scale_y_continuous(expand = c(0,0))+
   geom_bar(position="stack", stat="identity",width = 0.8) +
-  scale_fill_manual(values = cols)+
+  scale_fill_manual(values =  c("SSTR3+" = "chartreuse", 
+                                "SSTR3-"= "midnightblue"))+
   theme_pubr() +
   theme(axis.title.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -67,7 +63,7 @@ CILIA <-read.csv(file.choose(), header=TRUE)
 
 cols1 <- c("SSTR3+" = "black", "SSTR3+GAD+" =  'black')
 
-p1<-CILIA %>% ggplot(aes(SSTR3,Percent)) + bar_plain(fillcol = Treatment) + 
+p1<-CILIA %>% ggplot(aes(Treatment,Percent)) + bar_plain(fillcol = Treatment) + 
   scale_colour_manual(values = cols1) + ylab("Percent") 
 
 p1

@@ -1,22 +1,24 @@
-library(ggpubr)
 library(tidyverse)
+library(ggpubr)
+library(ggbeeswarm)
 library(patchwork)
 library(dplyr)
 library(FSA)
-library(ggbeeswarm)
 ###################
 #plotting functions
 ###################
 ###################
 bees_bars <- function(fillcol) {
   list(stat_summary(geom = "bar", fun = mean,
-                    aes(color = {{ fillcol }}), fill = NA, 
+                    aes(fill = {{ fillcol }}), 
                     width = 0.75, alpha = 1), 
        geom_quasirandom(aes(colour = {{ fillcol }}),
                         shape = 16, size=0.8, width = 0.15, alpha = 1), 
        stat_summary(geom = "errorbar",
                     fun.data = mean_se, width = 0.5), 
        scale_y_continuous(expand = c(0,0)), 
+       scale_fill_manual(values = cols),
+       scale_colour_manual(values = dots),
        theme_pubr(),
        theme(legend.position = "none", 
              axis.title.x = element_blank(),
@@ -35,20 +37,21 @@ bees_bars <- function(fillcol) {
 ###################
 mEPSC_AVG<-read.csv(file.choose(), header=TRUE)
 
-cols11 <- c("CTL" = "grey35", "shARL13b_1" =  'midnightblue',"shARL13b_2" = 'deepskyblue3')
+cols <- c("CTL" = "grey51","shARL13b_1"= "midnightblue","shARL13b_2" = 'deepskyblue3')
+dots <- c("CTL" = "grey80", "shARL13b_1" = 'blue2',"shARL13b_2" = 'deepskyblue')
 
-mEPSC_AVG %>% ggplot(aes(x = Treatment, y = AVG_AmpY)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols11) + 
-  coord_cartesian(ylim = c(0,20), clip = "off") + ylab("Abs. amplitude (pA)") 
+mEPSC_AVG %>% ggplot(aes(x = Treatment, y = AVG_AmpY)) + bees_bars(fillcol = Treatment) + 
+  coord_cartesian(ylim = c(0,20)) + ylab("Abs. amplitude (pA)") 
 
-# look at data
-ggqqplot(mEPSC_AVG$AVG_AmpY)
-ggdensity(mEPSC_AVG$AVG_AmpY)
-shapiro.test(mEPSC_AVG$AVG_AmpY)
+#look at data 
+ggqqplot(mEPSC_AVG,"AVG_AmpY",facet.by = "Treatment")
+ggdensity(mEPSC_AVG,"AVG_AmpY",color = "Treatment",palette = cols)
 
 #Dunn Kruskal-Wallis multiple comparison
 dunnTest(AVG_AmpY ~ Treatment,
          data=mEPSC_AVG,
          method="bh") 
+
 
 ###################
 ###################
@@ -99,20 +102,19 @@ dunnTest(IMI_Manual ~ Treatment,
 ###################
 AVG<-read.csv(file.choose(), header=TRUE)
 
-AVG %>% ggplot(aes(x = Treatment, y = AVG_Vm)) + bees_bars(fillcol = Treatment)  + scale_colour_manual(values = cols11) + 
-  coord_cartesian(ylim = c(0,-75),clip = "off") + ylab("Vm")
+AVG %>% ggplot(aes(x = Treatment, y = AVG_Vm)) + bees_bars(fillcol = Treatment)  +  
+  coord_cartesian(ylim = c(0,-75)) + ylab("Vm")
 
-AVG %>% ggplot(aes(x = Treatment, y = AVG_Rin)) + bees_bars(fillcol = Treatment)  + scale_colour_manual(values = cols11) +
-  coord_cartesian(ylim = c(0,590),clip = "off") + ylab("Rin") 
+AVG %>% ggplot(aes(x = Treatment, y = AVG_Rin)) + bees_bars(fillcol = Treatment)  +
+  coord_cartesian(ylim = c(0,590)) + ylab("Rin") 
+
 
 #look at data 
-ggqqplot(AVG$AVG_Vm)
-ggdensity(AVG$AVG_Vm)
-shapiro.test(AVG$AVG_Vm)
+ggqqplot(AVG,"AVG_Vm",facet.by = "Treatment")
+ggdensity(AVG,"AVG_Vm",color = "Treatment",palette = cols)
 
-ggqqplot(AVG$AVG_Rin)
-ggdensity(AVG$AVG_Rin)
-shapiro.test(AVG$AVG_Rin)
+ggqqplot(AVG,"AVG_Rin",facet.by = "Treatment")
+ggdensity(AVG,"AVG_Rin",color = "Treatment",palette = cols)
 
 #test
 #Dunn Kruskal-Wallis multiple comparison

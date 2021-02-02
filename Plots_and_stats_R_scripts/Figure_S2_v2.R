@@ -1,19 +1,19 @@
-library(ggpubr)
 library(tidyverse)
+library(ggpubr)
+library(ggbeeswarm)
 library(patchwork)
 library(dplyr)
 library(FSA)
 library(lme4)
 library(lmerTest)
 library(emmeans)
-library(ggbeeswarm)
 library(kableExtra)
 ###################
 #plotting functions
 ###################
 bees_bars <- function(fillcol) {
   list(stat_summary(geom = "bar", fun = mean,
-                    aes(color = {{ fillcol }}), fill = NA, 
+                    aes(fill = {{ fillcol }}), 
                     width = 0.75, alpha = 1), 
        geom_quasirandom(aes(colour = {{ fillcol }}),
                         shape = 16, size=0.8, width = 0.15, alpha = 1), 
@@ -42,32 +42,36 @@ normint_exc_B <- normint_exc %>% filter(Overlay %in% c("GRB_B"))
 normint_inh_B <- normint_inh %>% filter(Overlay %in% c("GRB_B"))
 normint_exc48_B <- normint_exc48 %>% filter(Overlay %in% c("GRB_B"))
 
-cols8 <- c("CTL" = "grey51","shARL13b_1"= "midnightblue")
-cols9 <- c("CTL" = "grey51", "shIFT88_CEP164" = "darkgoldenrod","shARL13b_2"= "deepskyblue3")
+cols1 <- c("CTL" = "grey51","shARL13b_1"= "midnightblue")
+dots1 <- c("CTL" = "grey80", "shARL13b_1" = 'blue2',"shARL13b_2" = 'deepskyblue')
 
-p1<-normint_exc_B %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols8) +
-  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5), clip = "off") 
+cols2 <- c("CTL" = "grey51", "shIFT88_CEP164" = "chartreuse3","shARL13b_2"= "deepskyblue3")
+dots2 <- c("CTL" = "grey80", "shIFT88_CEP164" = 'green4',"shARL13b_2" = 'deepskyblue')
 
-p2<-normint_exc48_B %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols9) +
-  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5), clip = "off") 
 
-p3<-normint_inh_B %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols8) +
-  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5), clip = "off")
+p1<-normint_exc_B %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols1) + scale_colour_manual(values = dots1) +
+  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5)) 
+
+p2<-normint_exc48_B %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols2) + scale_colour_manual(values = dots2) +
+  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5))
+
+p3<-normint_inh_B %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols1) + scale_colour_manual(values = dots1) +
+  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5))
 
 p1+p2+p3
 
-#look at data compared to normal
-ggqqplot(normint_exc_B$NormAvgTOT)
-ggdensity(normint_exc_B$NormAvgTOT)
-shapiro.test(normint_exc_B$NormAvgTOT)
+#look at data 
+ggqqplot(normint_exc_B,"NormAvgTOT",facet.by = "Treatment")
+ggdensity(normint_exc_B,"NormAvgTOT",color = "Treatment",palette = cols)
 
-ggqqplot(normint_exc48_B$NormAvgTOT)
-ggdensity(normint_exc48_B$NormAvgTOT)
-shapiro.test(normint_exc48_B$NormAvgTOT)
+ggqqplot(normint_exc48_B,"NormAvgTOT",facet.by = "Treatment")
+ggdensity(normint_exc48_B,"NormAvgTOT",color = "Treatment",palette = cols)
 
-ggqqplot(normint_inh_B$NormAvgTOT)
-ggdensity(normint_inh_B$NormAvgTOT)
-shapiro.test(normint_inh_B$NormAvgTOT)
+ggqqplot(normint_inh_B,"NormAvgTOT",facet.by = "Treatment")
+ggdensity(normint_inh_B,"NormAvgTOT",color = "Treatment",palette = cols)
 
 #linear model 1
 lm <- normint_exc_B %>% lmer(data = ., formula = NormAvgTOT~ Treatment + (1 | Dissociation))
@@ -92,7 +96,6 @@ plot(lm)
 shapiro.test(resid(lm))
 qqnorm(resid(lm))
 qqline(resid(lm)) 
-
 
 #linear model 3
 lm <- normint_inh_B %>% lmer(data = ., formula = log(NormAvgTOT) ~ Treatment + (1 | Dissociation))

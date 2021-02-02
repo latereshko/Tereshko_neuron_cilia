@@ -1,19 +1,19 @@
-library(ggpubr)
 library(tidyverse)
+library(ggpubr)
+library(ggbeeswarm)
 library(patchwork)
 library(dplyr)
 library(FSA)
 library(lme4)
 library(lmerTest)
 library(emmeans)
-library(ggbeeswarm)
 library(kableExtra)
 ###################
 #plotting functions
 ###################
 bees_bars_dose <- function(fillcol) {
   list(stat_summary(geom = "bar", fun = mean,
-                    aes(color = {{ fillcol }}), fill = NA, 
+                    aes(fill = {{ fillcol }}),
                     width = 0.75, alpha = 1), 
        geom_quasirandom(aes(colour = {{ fillcol }}),
                         shape = 16, size=0.8, width = 0.15, alpha = 1), 
@@ -21,6 +21,8 @@ bees_bars_dose <- function(fillcol) {
                     fun.data = mean_se, width = 0.5), 
        scale_y_continuous(expand = c(0,0)), 
        #facet_grid(cols = vars(Dissociation),as.table = FALSE, switch = NULL), 
+       scale_fill_manual(values = cols),
+       scale_colour_manual(values = dots),
        theme_pubr(),
        theme(legend.position = "none", 
              axis.title.x = element_blank(),
@@ -32,7 +34,7 @@ bees_bars_dose <- function(fillcol) {
 ###################
 bees_bars_time <- function(fillcol) {
   list(stat_summary(geom = "bar", fun = mean,
-                    aes(color = {{ fillcol }}), fill = NA, 
+                    aes(fill = {{ fillcol }}),
                     width = 0.75, alpha = 1), 
        geom_quasirandom(aes(colour = {{ fillcol }}),
                         shape = 16, size=0.8, width = 0.15, alpha = 1), 
@@ -40,6 +42,8 @@ bees_bars_time <- function(fillcol) {
                     fun.data = mean_se, width = 0.5), 
        scale_y_continuous(expand = c(0,0)), 
        facet_grid(cols = vars(Time),as.table = FALSE, switch = NULL), 
+       scale_fill_manual(values = cols),
+       scale_colour_manual(values = dots),
        theme_pubr(),
        theme(legend.position = "none", 
              axis.title.x = element_blank(),
@@ -49,6 +53,13 @@ bees_bars_time <- function(fillcol) {
   )
 }
 ###################
+cols <- c("CTL" = "grey51", 
+         "L_05"= "orange1","L_1"= "darkorange","L_2"= "orangered",
+         "MK_0125"= "skyblue3","MK_05"= "deepskyblue2", "MK_1"= "deepskyblue3","MK_2"= "deepskyblue4")
+
+dots <- c("CTL" = "grey80", 
+          "L_05"= "chocolate2","L_1"= "chocolate3","L_2"= "firebrick",
+          "MK_0125"= "skyblue","MK_05"= "skyblue1", "MK_1"= "deepskyblue","MK_2"= "dodgerblue")
 ############################
 #Figure S4A merck time VGLUT1 intensity
 ############################
@@ -58,14 +69,12 @@ SSTRDrugs_TimeB <- SSTRDrugs %>% filter(!Time %in% c("24H"),
                                         Label %in% c("CTL","L_2","MK_1"),
                                         Overlay %in% c("GRB_B"))
 
-SSTRDrugs_TimeB %>% ggplot(aes(Label,NormAvgTOT)) + bees_bars_time(fillcol = Label) + scale_colour_manual(values = cols) +
-  coord_cartesian(ylim = c(0,3),clip = "off")+xlab("Treatment")+ ylab("Avg. Total Intensity VGLUT1")
+SSTRDrugs_TimeB %>% ggplot(aes(Label,NormAvgTOT)) + bees_bars_time(fillcol = Label) + 
+  coord_cartesian(ylim = c(0,3))+xlab("Treatment")+ ylab("Avg. Total Intensity VGLUT1")
 
 #look at data 
-ggqqplot(SSTRDrugs_TimeB$NormAvgTOT)
-ggdensity(SSTRDrugs_TimeB$NormAvgTOT)
-shapiro.test(SSTRDrugs_TimeB$NormAvgTOT)
-bartlett.test(NormAvgTOT ~ Label, data = SSTRDrugs_TimeB)
+ggqqplot(SSTRDrugs_TimeB,"NormAvgTOT",facet.by = "Label")
+ggdensity(SSTRDrugs_TimeB,"NormAvgTOT",color = "Label",palette = cols)
 
 ############################
 # linear model Time VGLUT1
@@ -97,28 +106,16 @@ SSTRDrugs_doseB <- SSTRDrugs %>% filter(Time %in% c("24H"),
 overlaylabels <- c("Shank3", "VGLUT1")
 names(overlaylabels) <- c("GRB_R", "GRB_B")
 
-cols <- c("CTL" = "grey51", 
-          "L_05"= "orange1","L_1"= "darkorange","L_2"= "orangered",
-          "MK_0125"= "skyblue3","MK_05"= "deepskyblue2", "MK_1"= "deepskyblue3","MK_2"= "deepskyblue4")
+SSTRDrugs_doseR %>% ggplot(aes(Label,NormAvgTOT)) + bees_bars_dose(fillcol = Label) + 
+  coord_cartesian(ylim = c(0,3))+xlab("Treatment ")+ ylab("Avg. Total Intensity Shank3")
 
-SSTRDrugs_doseR %>% ggplot(aes(Label,NormAvgTOT)) + bees_bars_dose(fillcol = Label) + scale_colour_manual(values = cols) +
-  coord_cartesian(ylim = c(0,3),clip = "off")+xlab("Treatment ")+ ylab("Avg. Total Intensity Shank3")
+SSTRDrugs_doseB %>% ggplot(aes(Label,NormAvgTOT)) + bees_bars_dose(fillcol = Label) + 
+  coord_cartesian(ylim = c(0,3))+xlab("Treatment ")+ ylab("Avg. Total Intensity VGLUT1")
 
-SSTRDrugs_doseB %>% ggplot(aes(Label,NormAvgTOT)) + bees_bars_dose(fillcol = Label) + scale_colour_manual(values = cols) +
-  coord_cartesian(ylim = c(0,3),clip = "off")+xlab("Treatment ")+ ylab("Avg. Total Intensity VGLUT1")
 
 #look at data 
-ggqqplot(SSTRDrugs_doseR$NormAvgTOT)
-ggdensity(SSTRDrugs_doseR$NormAvgTOT)
-shapiro.test(SSTRDrugs_doseR$NormAvgTOT)
-bartlett.test(NormAvgTOT ~ Label, data = SSTRDrugs_doseR)
-
-#look at data 
-ggqqplot(SSTRDrugs_doseB$NormAvgTOT)
-ggdensity(SSTRDrugs_doseB$NormAvgTOT)
-shapiro.test(SSTRDrugs_doseB$NormAvgTOT)
-bartlett.test(NormAvgTOT ~ Label, data = SSTRDrugs_doseB)
-
+ggdensity(SSTRDrugs_doseR,"NormAvgTOT",color = "Label",palette = cols)
+ggdensity(SSTRDrugs_doseB,"NormAvgTOT",color = "Label",palette = cols)
 
 # linear model dose Shank3
 merck_R.lm <- SSTRDrugs_doseR %>% 
@@ -163,15 +160,13 @@ Dense <- read_csv(file.choose())
 Dense_dose <- Dense %>% filter(Time %in% c("24H"),
                                !Label %in% c("MK_2"))
 
+Dense_dose %>% ggplot(aes(Label,Density)) + bees_bars_time(fillcol = Label) + 
+  coord_cartesian(ylim = c(0,0.5))+xlab("Treatment")
 
-Dense_dose %>% ggplot(aes(Label,Density)) + bees_bars_time(fillcol = Label) + scale_colour_manual(values = cols) +
-  coord_cartesian(ylim = c(0,0.5),clip = "off")+xlab("Treatment")
 
-
-#look at data compared to normal
-ggqqplot(Dense_dose$Density)
-ggdensity(Dense_dose$Density)
-shapiro.test(Dense_dose$Density)
+#look at data 
+ggqqplot(Dense_dose,"Density",facet.by = "Label")
+ggdensity(Dense_dose,"Density",color = "Label",palette = cols)
 
 # linear model w. lmer Dose density
 dense_dose.lm <- Dense_dose %>% 
@@ -197,13 +192,13 @@ qqline(resid(dense_dose.lm))
 ############################
 
 merck_cilia <-read.csv(file.choose(), header=TRUE)  
-# merck_cilia <- merck_cilia %>% filter(!Dose %in% c("L_1"))
+merck_cilia <- merck_cilia %>% filter(!Dose %in% c("L_1"))
 # merck_cilia <- merck_cilia %>% filter(!Time %in% c("18H"))
 
 cols7 <- c("grey51",'chocolate1', 'purple')
 
-merck_cilia %>% ggplot(aes(Treatment,Length)) + bees_bars(fillcol = Dose) + scale_colour_manual(values = cols7) +
-  coord_cartesian(ylim = c(0,12),clip = "off")
+merck_cilia %>% ggplot(aes(Treatment,Length)) + bees_bars_dose(fillcol = Dose) + 
+  coord_cartesian(ylim = c(0,12))
 
 dunnTest(Length ~ Treatment,
          data=merck_cilia,
@@ -216,12 +211,10 @@ dunnTest(Length ~ Treatment,
 ############################
 viability_AVG <-read.csv(file.choose())   
 
-cols <- c("dead" = "chartreuse3", 
-          "live"= "grey51")
-
 ggplot(viability_AVG, aes(fill=Avg, y=Fraction, x=Label)) + 
   geom_bar(position="stack", stat="identity",width = 0.8) +
-  scale_fill_manual(values = cols)+
+  scale_y_continuous(expand = c(0,0)) +
+  scale_fill_manual(values = c("dead" = "chartreuse3","live"= "grey51")) +
   theme_pubr() +
   theme(#legend.position = "none",
     axis.title.x = element_blank(),

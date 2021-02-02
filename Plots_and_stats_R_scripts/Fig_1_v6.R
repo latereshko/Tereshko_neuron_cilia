@@ -1,13 +1,14 @@
-library(ggpubr)
 library(tidyverse)
+library(ggpubr)
+library(ggbeeswarm)
 library(patchwork)
 library(dplyr)
 library(FSA)
 library(lme4)
 library(lmerTest)
 library(emmeans)
-library(ggbeeswarm)
 library(kableExtra)
+
 ###################
 #plotting functions
 ###################
@@ -27,7 +28,7 @@ bar_plain <- function(fillcol) {
 ###################
 bees_bars <- function(fillcol) {
   list(stat_summary(geom = "bar", fun = mean,
-                    aes(color = {{ fillcol }}), fill = NA, 
+                    aes(fill = {{ fillcol }}),
                     width = 0.75, alpha = 1), 
        geom_quasirandom(aes(colour = {{ fillcol }}),
                         shape = 16, size=0.8, width = 0.15, alpha = 1), 
@@ -35,6 +36,8 @@ bees_bars <- function(fillcol) {
                     fun.data = mean_se, width = 0.5), 
        scale_y_continuous(expand = c(0,0)), 
        #facet_grid(cols = vars(Dissociation),as.table = FALSE, switch = NULL), 
+       scale_fill_manual(values = cols),
+       scale_color_manual(values = dots),
        theme_pubr(),
        theme(legend.position = "none", 
              axis.title.x = element_blank(),
@@ -43,6 +46,7 @@ bees_bars <- function(fillcol) {
              axis.ticks = element_line(colour="black",size=0.5))
   )
 }
+
 ###################
 ###################
 ###################
@@ -62,10 +66,11 @@ p1
 ###################
 CILIA_length <-read.csv(file.choose(), header=TRUE)  
 
-cols2 <- c("N" = "blue", "Y" =  'red')
+cols <- c("N" = "blue", "Y" =  'red')
+dots <- c("N" = "dodgerblue", "Y" =  'orange')
 
 p2<-CILIA_length %>% ggplot(aes(x = GAD., y = Length)) + bees_bars(fillcol = GAD.)+
-  coord_cartesian(ylim = c(0,12), clip = "off") + scale_colour_manual(values = cols2) + scale_x_discrete(labels=c("exc","inh"))
+  coord_cartesian(ylim = c(0,12))  + scale_x_discrete(labels=c("exc","inh"))
 
 p2
 
@@ -82,13 +87,19 @@ KD <-read.csv(file.choose(), header=TRUE)
 KD <-KD %>% filter(Channel=="ARL13b")
 
 cols <- c("CTL" = "grey51", "shARL13b_1" = 'midnightblue',"shARL13b_2" = 'deepskyblue3')
+dots <- c("CTL" = "grey80", "shARL13b_1" = 'blue2',"shARL13b_2" = 'deepskyblue')
 
-p3<-KD %>% ggplot(aes(x = Treatment, y = NormInt)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols) + 
-  coord_cartesian(ylim = c(0,1.95), clip = "off") + ylab("Normalized intensity")
+p3<-KD %>% ggplot(aes(x = Treatment, y = NormInt)) + bees_bars(fillcol = Treatment) + 
+  coord_cartesian(ylim = c(0,1.95)) + ylab("Normalized intensity")
 
-p4<-KD %>% ggplot(aes(x = Treatment, y = Length)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols) + 
-  coord_cartesian(ylim = c(0,10), clip = "off") + ylab("Length (um)")
+p4<-KD %>% ggplot(aes(x = Treatment, y = Length)) + bees_bars(fillcol = Treatment) + 
+  coord_cartesian(ylim = c(0,10)) + ylab("Length (um)")
+
 p3+p4
+
+#tests
+kruskal.test(NormInt ~ Treatment, data = KD)
+kruskal.test(Length ~ Treatment, data = KD)
 
 #test
 #Dunn Kruskal-Wallis multiple comparison
@@ -101,6 +112,7 @@ dunnTest(Length ~ Treatment,
          data=KD,
          method="bh") 
 
+#LMM
 KDint.lm <- KD %>% lmer(data = ., formula = log(NormInt) ~ Treatment + (1 | Dissociation))
 
 KDint.lm.emm <- KDint.lm %>% emmeans("trt.vs.ctrl" ~ Treatment )
@@ -133,12 +145,14 @@ qqline(resid(KDint.lm))
 dends <-read.csv(file.choose(), header=TRUE)  
 
 cols <- c("CTL" = "grey51", "shARL13b_1" =  'midnightblue')
+dots <- c("CTL" = "grey80", "shARL13b_1" = 'blue2')
 
-p5<-dends %>% ggplot(aes(Treatment,Total.dendritic.length)) + bees_bars(fillcol = Treatment)  + scale_colour_manual(values = cols) +
-  coord_cartesian(ylim = c(0,3500),clip = "off")+ylab("Total dendritic length (uM)")
+p5<-dends %>% ggplot(aes(Treatment,Total.dendritic.length)) + bees_bars(fillcol = Treatment)  + 
+  coord_cartesian(ylim = c(0,3500)) + ylab("Total dendritic length (uM)")
 
-p6<-dends %>% ggplot(aes(Treatment,Dendritic.Nodes)) + bees_bars(fillcol = Treatment)  + scale_colour_manual(values = cols) +
-  coord_cartesian(ylim = c(0,45),clip = "off")+ylab("No. dendritic nodes")
+p6<-dends %>% ggplot(aes(Treatment,Dendritic.Nodes)) + bees_bars(fillcol = Treatment)  + 
+  coord_cartesian(ylim = c(0,45)) + ylab("No. dendritic nodes")
+
 p5+p6
 
 #test

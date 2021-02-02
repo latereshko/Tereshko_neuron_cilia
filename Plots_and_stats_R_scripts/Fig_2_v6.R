@@ -1,19 +1,19 @@
-library(ggpubr)
 library(tidyverse)
+library(ggpubr)
+library(ggbeeswarm)
 library(patchwork)
 library(dplyr)
 library(FSA)
 library(lme4)
 library(lmerTest)
 library(emmeans)
-library(ggbeeswarm)
 library(kableExtra)
 ###################
 #plotting functions
 ###################
 bees_bars <- function(fillcol) {
   list(stat_summary(geom = "bar", fun = mean,
-                    aes(color = {{ fillcol }}), fill = NA, 
+                    aes(fill = {{ fillcol }}), 
                     width = 0.75, alpha = 1), 
        geom_quasirandom(aes(colour = {{ fillcol }}),
                         shape = 16, size=0.8, width = 0.15, alpha = 1), 
@@ -42,33 +42,31 @@ normint_exc_R <- normint_exc %>% filter(Overlay %in% c("GRB_R"))
 normint_exc48_R <- normint_exc48 %>% filter(Overlay %in% c("GRB_R"))
 normint_inh_R <- normint_inh %>% filter(Overlay %in% c("GRB_R"))
 
-cols8 <- c("CTL" = "grey51","shARL13b_1"= "midnightblue")
-cols9 <- c("CTL" = "grey51", "shIFT88_CEP164" = "darkgoldenrod","shARL13b_2"= "deepskyblue3")
+cols1 <- c("CTL" = "grey51","shARL13b_1"= "midnightblue")
+dots1 <- c("CTL" = "grey80", "shARL13b_1" = 'blue2',"shARL13b_2" = 'deepskyblue')
 
-p1<-normint_exc_R %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols8) +
-  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5), clip = "off") 
+cols2 <- c("CTL" = "grey51", "shIFT88_CEP164" = "chartreuse3","shARL13b_2"= "deepskyblue3")
+dots2 <- c("CTL" = "grey80", "shIFT88_CEP164" = 'green4',"shARL13b_2" = 'deepskyblue')
 
-p2<-normint_exc48_R %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols9) +
-  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5), clip = "off")
+p1<-normint_exc_R %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols1) + scale_colour_manual(values = dots1) +
+  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5)) 
 
-p3<-normint_inh_R %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols8) +
-  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5), clip = "off")
+p2<-normint_exc48_R %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols2) + scale_colour_manual(values = dots2) +
+  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5))
+
+p3<-normint_inh_R %>% ggplot(aes(x = Treatment, y = NormAvgTOT)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols1) + scale_colour_manual(values = dots1) +
+  ylab("Avg. Total Intensity") + coord_cartesian(ylim = c(0,2.5))
 
 p1+p2+p3
 
-#look at data compared to normal
-ggqqplot(normint_exc_R$NormAvgTOT)
-ggdensity(normint_exc_R$NormAvgTOT)
-shapiro.test(normint_exc_R$NormAvgTOT)
+#look at data 
+ggqqplot(normint_exc_R,"NormAvgTOT",facet.by = "Treatment")
+ggdensity(normint_exc_R,"NormAvgTOT",color = "Treatment",palette = cols)
 
-ggqqplot(normint_exc48_R$NormAvgTOT)
-ggdensity(normint_exc48_R$NormAvgTOT)
-shapiro.test(normint_exc48_R$NormAvgTOT)
-
-ggqqplot(normint_inh_R$NormAvgTOT)
-ggdensity(normint_inh_R$NormAvgTOT)
-shapiro.test(normint_inh_R$NormAvgTOT)
-
+#tests
 #linear model 1
 lm <- normint_exc_R %>% lmer(data = ., formula = NormAvgTOT~ Treatment + (1 | Dissociation))
 lm.emm <- lm %>% emmeans("trt.vs.ctrl" ~ Treatment )
@@ -106,6 +104,7 @@ shapiro.test(resid(lm))
 qqnorm(resid(lm))
 qqline(resid(lm)) 
 
+wilcox.test(NormAvgTOT ~ Treatment,data=normint_inh_R)
 
 ###################
 ###################
@@ -116,30 +115,25 @@ dense_exc <-read.csv(file.choose(), header=TRUE)
 dense_exc48 <-read.csv(file.choose(), header=TRUE) 
 dense_inh <-read.csv(file.choose(), header=TRUE)
 
-p4<-dense_exc %>% ggplot(aes(x = Treatment, y = Density)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols8) + 
-  coord_cartesian(ylim = c(0,0.3), clip = "off") + ylab("Synapse density (per μm)")
+p4<-dense_exc %>% ggplot(aes(x = Treatment, y = Density)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols1) + scale_colour_manual(values = dots1) + 
+  coord_cartesian(ylim = c(0,0.3)) + ylab("Synapse density (per μm)")
 
-p5<-dense_exc48 %>% ggplot(aes(x = Treatment, y = Density)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols9) + 
-  coord_cartesian(ylim = c(0,0.3), clip = "off") + ylab("Synapse density (per μm)")
+p5<-dense_exc48 %>% ggplot(aes(x = Treatment, y = Density)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols2) + scale_colour_manual(values = dots2) + 
+  coord_cartesian(ylim = c(0,0.3)) + ylab("Synapse density (per μm)")
 
-p6<-dense_inh %>% ggplot(aes(x = Treatment, y = Density)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols8) + 
-  coord_cartesian(ylim = c(0,0.3), clip = "off") + ylab("Synapse density (per μm)")
+p6<-dense_inh %>% ggplot(aes(x = Treatment, y = Density)) + bees_bars(fillcol = Treatment) + 
+  scale_fill_manual(values = cols1) + scale_colour_manual(values = dots1) + 
+  coord_cartesian(ylim = c(0,0.3)) + ylab("Synapse density (per μm)")
 
 p4+p5+p6
 
 #look at data 
-ggqqplot(dense_exc$Density)
-ggdensity(dense_exc$Density)
-shapiro.test(dense_exc$Density)
+ggqqplot(dense_exc,"Density",facet.by = "Treatment")
+ggdensity(dense_exc,"Density",color = "Treatment",palette = cols)
 
-ggqqplot(dense_inh$Density)
-ggdensity(dense_inh$Density)
-shapiro.test(dense_inh$Density)
-
-ggqqplot(dense_exc48$Density)
-ggdensity(dense_exc48$Density)
-shapiro.test(dense_exc48$Density)
-
+#tests
 #linear model 4
 dense_exc.lm <- dense_exc %>% lmer(data = ., formula = Density ~ Treatment+(1 | Dissociation))
 
@@ -155,25 +149,29 @@ qqline(resid(dense_exc.lm))
 
 
 #linear model 5
-dense_exc.lm <- dense_exc48 %>% lmer(data = ., formula = (log(Density)) ~ Treatment + (1 | Dissociation))
+dense_exc.lm <- dense_exc48 %>% lmer(data = ., formula = Density ~ Treatment + (1 | Dissociation))
 # dense_exc.lmemm <- dense_exc.lm %>% emmeans("trt.vs.ctrl" ~ Treatment )
 # dense_exc.lmemm$contrasts %>% 
 #   rbind(adjust = "dunnett") %>% 
 #   kbl() %>% kable_minimal()
 
-#Dunn Kruskal-Wallis multiple comparison
+kruskal.test(Density ~ Treatment,data=dense_exc48)
 dunnTest(Density ~ Treatment,
          data=dense_exc48,
          method="bh") 
 
+
 #linear model 6
-dense_exc.lm <- dense_inh %>% lmer(data = ., formula = (log(Density)) ~ Treatment  + (1 | SLIDE) +(1 | Dissociation))
-dense_exc.lmemm <- dense_exc.lm %>% emmeans("trt.vs.ctrl" ~ Treatment )
-dense_exc.lmemm$contrasts %>% 
+dense_inh.lm <- dense_inh %>% lmer(data = ., formula = (log(Density)) ~ Treatment  + (1 | SLIDE) +(1 | Dissociation))
+dense_inh.lmemm <- dense_inh.lm %>% emmeans("trt.vs.ctrl" ~ Treatment )
+dense_inh.lmemm$contrasts %>% 
   rbind(adjust = "dunnett") %>% 
   kbl() %>% kable_minimal()
 
-plot(dense_exc.lm)
-shapiro.test(resid(dense_exc.lm))
-qqnorm(resid(dense_exc.lm))
-qqline(resid(dense_exc.lm)) 
+plot(dense_inh.lm)
+shapiro.test(resid(dense_inh.lm))
+qqnorm(resid(dense_inh.lm))
+qqline(resid(dense_inh.lm)) 
+
+wilcox.test(Density ~ Treatment,data=dense_inh)
+

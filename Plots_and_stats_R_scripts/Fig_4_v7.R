@@ -1,21 +1,27 @@
-library(ggpubr)
 library(tidyverse)
+library(ggpubr)
+library(ggbeeswarm)
 library(patchwork)
 library(dplyr)
-library(ggbeeswarm)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+library(kableExtra)
 ###################
 #plotting functions
 ###################
 ###################
 bees_bars <- function(fillcol) {
   list(stat_summary(geom = "bar", fun = mean,
-                    aes(color = {{ fillcol }}), fill = NA, 
+                    aes(fill = {{ fillcol }}),
                     width = 0.75, alpha = 1), 
        geom_quasirandom(aes(colour = {{ fillcol }}),
                         shape = 16, size=0.8, width = 0.15, alpha = 1), 
        stat_summary(geom = "errorbar",
                     fun.data = mean_se, width = 0.5), 
-       scale_y_continuous(expand = c(0,0)), 
+       scale_y_continuous(expand = c(0,0)),   
+       scale_fill_manual(values = cols),
+       scale_colour_manual(values = dots),
        theme_pubr(),
        theme(legend.position = "none", 
              axis.title.x = element_blank(),
@@ -32,18 +38,15 @@ bees_bars <- function(fillcol) {
 ###################
 spont_FR <-read.csv(file.choose(), header=TRUE)
 
-spont_FR_SEP <-spont_FR %>% separate(Cell, into = c("Cell", "Recording"), sep = "_00")
-
-spont_AVGS <- spont_FR_SEP %>% group_by(Cell, Treatment, Dissociation) %>% summarize(AVGSPIKE=mean(Spikes))
-spont_AVGS$Time <- rep(c(20), times = c(52))
+spont_AVGS <- spont_FR %>% group_by(CellID, Treatment, Dissociation) %>% summarize(AVGSPIKE=mean(Spikes))
+spont_AVGS$Time <- rep(c(20), times = c(57))
 spont_AVGS$RATE <- spont_AVGS$AVGSPIKE/spont_AVGS$Time
 
-cols10 <- c("CTL" = "grey51", "shARL13b_1" =  'midnightblue')
+cols <- c("CTL" = "grey51", "shARL13b" =  'midnightblue')
+dots <- c("CTL" = "grey80", "shARL13b" = 'blue2')
 
-spont_AVGS %>% ggplot(aes(x = Treatment, y = RATE)) + bees_bars(fillcol = Treatment) + scale_colour_manual(values = cols10) + 
-  coord_cartesian(ylim = c(0,0.8), clip = "off") + ylab("Avg. Firing Rate (Hz)") 
-
-spont_AVGS <- spont_AVGS %>% filter(!RATE == 0)
+spont_AVGS %>% ggplot(aes(x = Treatment, y = RATE)) + bees_bars(fillcol = Treatment) +
+  coord_cartesian(ylim = c(0,0.8)) + ylab("Avg. Firing Rate (Hz)") 
 
 #tests
 wilcox.test(RATE ~ Treatment, data = spont_AVGS)
@@ -56,6 +59,8 @@ wilcox.test(RATE ~ Treatment, data = spont_AVGS)
 
 FI <-read.csv(file.choose(), header=TRUE)  
 
+library(FSA) #for function se
+
 avg_FI <- FI %>%
   group_by(Treatment,STEP) %>%
   summarise(AVGperSTEP = mean(AVG_FR), se=se(AVG_FR))
@@ -65,7 +70,7 @@ ggplot(data=avg_FI,
            fill=Treatment)) + 
   geom_line(aes(colour=Treatment), size =1) + 
   geom_ribbon(alpha=0.15)+
-  scale_color_manual(values=c('grey51','midnightblue','deepskyblue3')) +
+  scale_color_manual(values=c('grey80','blue2','deepskyblue')) +
   scale_fill_manual(values=c('grey51','midnightblue','deepskyblue3')) +
   scale_y_continuous(expand = c(0,0)) +
   theme_pubr() +
